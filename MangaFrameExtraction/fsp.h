@@ -104,7 +104,7 @@ static int separate_count = 0;
 
 class FrameSeparation {
 public:
-    FrameSeparation(IplImage src /*, IplImage *remained_src*/, string filename, string output_dir, int original_size);
+    FrameSeparation(IplImage src /*, IplImage *remained_src*/, string filename, string output_dir, int original_size, PixPoint rel_original_point);
     ~FrameSeparation();
 
     void save_image(IplImage* img);
@@ -157,6 +157,13 @@ private:
     IplImage* bin_img;
     // detect_pixels用
     Mat dp_img;
+
+    // 元画像からの相対座標
+    PixPoint rel_original_point;
+    // 分割線で切った画像の相対座標
+    PixPoint rel_slice_point;
+    // 分割線で切った残りの画像の相対座標
+    PixPoint rel_remained_point;
 
     // HOG
     vector<Mat> integrals;

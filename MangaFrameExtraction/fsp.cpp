@@ -8,7 +8,7 @@
 
 #include "fsp.h"
 
-FrameSeparation::FrameSeparation(IplImage src, string filename, string output_dir, int original_size)
+FrameSeparation::FrameSeparation(IplImage src, string filename, string output_dir, int original_size, PixPoint rel_original_point)
 {
 
     this->src = cvCloneImage(&src);
@@ -17,6 +17,7 @@ FrameSeparation::FrameSeparation(IplImage src, string filename, string output_di
     this->bin_img = cvCloneImage(&src);
     //    this->separate_count = separate_count;
     this->original_size = original_size;
+    this->rel_original_point = rel_original_point;
     this->filename = filename;
     this->output_dir = output_dir;
     this->dp_img = cvarrToMat(this->src);
@@ -50,7 +51,7 @@ FrameSeparation::FrameSeparation(IplImage src, string filename, string output_di
                         save_image(this->src);
                         break;
                     }
-                    fs1_recursive = new FrameSeparation(*this->remained_src, filename, output_dir, original_size);
+                    fs1_recursive = new FrameSeparation(*this->remained_src, filename, output_dir, original_size, rel_remained_point);
                     delete fs1_recursive;
                     break;
 
@@ -59,12 +60,12 @@ FrameSeparation::FrameSeparation(IplImage src, string filename, string output_di
                         save_image(this->src);
                         break;
                     }
-                    fs1_recursive = new FrameSeparation(*this->slice_src, filename, output_dir, original_size);
+                    fs1_recursive = new FrameSeparation(*this->slice_src, filename, output_dir, original_size, rel_slice_point);
                     delete fs1_recursive;
                     break;
                 case OK:
-                    fs1_recursive = new FrameSeparation(*this->slice_src, filename, output_dir, original_size);
-                    fs2_recursive = new FrameSeparation(*this->remained_src, filename, output_dir, original_size);
+                    fs1_recursive = new FrameSeparation(*this->slice_src, filename, output_dir, original_size, rel_slice_point);
+                    fs2_recursive = new FrameSeparation(*this->remained_src, filename, output_dir, original_size, rel_remained_point);
                     delete fs1_recursive;
                     delete fs2_recursive;
                     break;
@@ -76,17 +77,17 @@ FrameSeparation::FrameSeparation(IplImage src, string filename, string output_di
         else {
             switch (separation()) {
             case DROP_SLICE_SRC:
-                fs1_recursive = new FrameSeparation(*this->remained_src, filename, output_dir, original_size);
+                fs1_recursive = new FrameSeparation(*this->remained_src, filename, output_dir, original_size, rel_remained_point);
                 delete fs1_recursive;
                 break;
 
             case DROP_REMAINED_SRC:
-                fs1_recursive = new FrameSeparation(*this->slice_src, filename, output_dir, original_size);
+                fs1_recursive = new FrameSeparation(*this->slice_src, filename, output_dir, original_size, rel_slice_point);
                 delete fs1_recursive;
                 break;
             case OK:
-                fs1_recursive = new FrameSeparation(*this->slice_src, filename, output_dir, original_size);
-                fs2_recursive = new FrameSeparation(*this->remained_src, filename, output_dir, original_size);
+                fs1_recursive = new FrameSeparation(*this->slice_src, filename, output_dir, original_size, rel_slice_point);
+                fs2_recursive = new FrameSeparation(*this->remained_src, filename, output_dir, original_size, rel_remained_point);
                 delete fs1_recursive;
                 delete fs2_recursive;
                 break;
@@ -106,6 +107,14 @@ FrameSeparation::~FrameSeparation()
 
 void FrameSeparation::save_image(IplImage* img)
 {
+    cout << "panel-region" << " ";
+    cout << separate_count << " ";
+    cout << rel_original_point.x << " ";
+    cout << rel_original_point.y << " ";
+    cout << img->width << " ";
+    cout << img->height << " ";
+    cout << endl;
+
     stringstream fn;
     fn << output_dir << filename << "_" << separate_count << ".jpg";
     cvSaveImage(fn.str().c_str(), img);
@@ -481,6 +490,9 @@ bool FrameSeparation::sl_exists()
 
 int FrameSeparation::separation()
 {
+    rel_slice_point = rel_original_point;
+    rel_remained_point = rel_original_point;
+
     vector<PixPoint>* pixels = &slice_line.pixels;
     // x軸方向に分割した場合
     if (slice_line.is_horizontal) {
@@ -509,6 +521,8 @@ int FrameSeparation::separation()
         cvSet(slice_src, cvScalarAll(255), 0);
         remained_src = cvCreateImage(remained_size, src->depth, src->nChannels);
         cvSet(remained_src, cvScalarAll(255), 0);
+
+        rel_remained_point.y += slice_line.position;
 
         int h, w, c;
         if (src->width == pixels->size() && slice_line.theta == 90) {
@@ -631,6 +645,8 @@ int FrameSeparation::separation()
         cvSet(slice_src, cvScalarAll(255), 0);
         remained_src = cvCreateImage(remained_size, src->depth, src->nChannels);
         cvSet(remained_src, cvScalarAll(255), 0);
+
+        rel_remained_point.x += slice_line.position;
 
         int h, w, c;
         if (src->height == pixels->size() && slice_line.theta == 90) {

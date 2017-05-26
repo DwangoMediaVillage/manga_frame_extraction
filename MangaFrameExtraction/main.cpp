@@ -39,13 +39,20 @@ void execute(string input_dir, string output_dir, string filename)
             width = (int)(width * ((double)MAX_HEIGHT / height));
             height = MAX_HEIGHT;
         }
+
+        cout << "rescale" << " ";
+        cout << (float) width / input->width << " ";
+        cout << (float) height / input->height << " ";
+        cout << endl;
+
         IplImage* scale_input = cvCreateImage(cvSize(width, height), input->depth, input->nChannels);
         cvResize(input, scale_input, CV_INTER_CUBIC);
         input = cvCloneImage(scale_input);
         cvReleaseImage(&scale_input);
     }
 
-    FrameSeparation* fs = new FrameSeparation(*input, filename, output_dir, input->width * input->height);
+    PixPoint p = {0, 0};
+    FrameSeparation* fs = new FrameSeparation(*input, filename, output_dir, input->width * input->height, p);
     cvReleaseImage(&input);
     separate_count = 0;
     delete fs;
