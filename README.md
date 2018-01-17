@@ -32,7 +32,7 @@ make
 ```
 
 ## Require
-*  OpenCV (https://github.com/Itseez/opencv)
+*  OpenCV3 (https://github.com/Itseez/opencv)
 *  Boost (http://www.boost.org 1.40 or later)
 
 ## License
